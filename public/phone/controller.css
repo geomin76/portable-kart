@@ -71,6 +71,9 @@ h1 { margin: 12px 0 4px; font-size: 28px; letter-spacing: -0.02em; }
   border-radius: 14px;
 }
 .primary:active { filter: brightness(0.9); }
+.options { display: flex; justify-content: center; gap: 20px; margin-top: 16px; }
+.opt { display: flex; align-items: center; gap: 6px; font-size: 15px; color: var(--ink); }
+.opt input { width: 18px; height: 18px; accent-color: var(--accent); }
 .error { color: #c62828; font-size: 14px; margin-top: 16px; }
 .tip { margin: 20px 0 0; font-size: 14px; color: var(--muted); }
 .tip strong { color: var(--ink); }
@@ -201,7 +204,7 @@ h1 { margin: 12px 0 4px; font-size: 28px; letter-spacing: -0.02em; }
 
 /* Speaker grille + sideways status */
 .speaker-row { flex: 1.1 1 0; min-height: 0; position: relative; display: grid; place-items: center; }
-.speaker { display: grid; grid-template-columns: repeat(4, auto); gap: min(2.4cqw, 1.1cqh) min(3cqw, 1.3cqh); }
+.speaker { padding: 2cqh 6cqw; touch-action: none; display: grid; grid-template-columns: repeat(4, auto); gap: min(2.4cqw, 1.1cqh) min(3cqw, 1.3cqh); }
 .speaker i { width: min(1.8cqw, 0.85cqh); height: min(1.8cqw, 0.85cqh); border-radius: 50%; background: #5b5f66; }
 .speaker i:nth-child(n+5):nth-child(-n+20) { width: min(2.4cqw, 1.1cqh); height: min(2.4cqw, 1.1cqh); }
 

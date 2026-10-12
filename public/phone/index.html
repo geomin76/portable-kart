@@ -23,6 +23,10 @@
         <input id="name" maxlength="20" autocomplete="nickname" placeholder="Player">
       </label>
       <button id="start" class="primary">Join game</button>
+      <div class="options">
+        <label class="opt"><input type="checkbox" id="opt-sound" checked> Sounds</label>
+        <label class="opt"><input type="checkbox" id="opt-rumble" checked> Vibration</label>
+      </div>
       <p id="join-error" class="error" hidden></p>
       <p class="tip">Hold it sideways with the <strong>D-pad on the left</strong>, like the Wii Wheel. Rotation Lock can stay on.</p>
     </div>
@@ -58,7 +62,7 @@
       </div>
 
       <div class="speaker-row">
-        <div class="speaker" aria-hidden="true">
+        <div id="speaker" class="speaker" role="button" aria-label="Sound on or off">
           <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
           <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
         </div>

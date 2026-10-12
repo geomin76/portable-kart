@@ -73,6 +73,14 @@ The phone screen looks like a Wii Remote. Hold it sideways with the **D-pad on t
 
 A real remote has B on the back under your index finger. Phones have no back buttons, so B sits next to the D-pad, where your left thumb can drift while your right thumb holds 2.
 
+### Sounds and vibration
+
+The phone plays the moments a real Wii Remote reacts to: a rumble and chime when it connects, a tick on each button, a buzz when you use an item (D-pad), a whoosh when you flick for a trick, and the Home button sound. Sounds go through a small, slightly crunchy filter so they sound like the remote's speaker. **Tap the speaker grille** to mute or unmute, or use the switches on the join screen.
+
+- **These are phone-side effects, not the game's.** Dolphin's controller link (DSU) only carries input, so the game can't trigger rumble or play through the phone's speaker. Getting hit doesn't rumble, for example.
+- **iPhone:** Safari has no vibration API, so "rumble" is the light system haptic tap (iOS 17.4+), played as a quick series of taps. Sounds follow the silent switch.
+- **Android:** real vibration patterns.
+
 ## Troubleshooting
 
 - **Phone can't load the page.** Make sure it's on the same Wi-Fi as the laptop, not cellular. Guest and hotel networks often block devices from talking to each other, so use a phone hotspot or home network. Check that your firewall allowed the connection.

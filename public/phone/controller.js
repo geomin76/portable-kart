@@ -1,5 +1,7 @@
 // Phone-side Wii Remote: reads touch + motion, streams it to the laptop.
 
+import { fx, unlockAudio, getPrefs, setPref } from './feedback.js';
+
 const BUTTON = {
   A: 1 << 0,
   B: 1 << 1,
@@ -17,6 +19,8 @@ const BUTTON = {
 const PLAYER_COLORS = ['#e5322d', '#3b82f6', '#2fb86a', '#f5c518'];
 const G = 9.80665;
 const DEG = Math.PI / 180;
+// A flick this far past 1g (in any direction) counts as a trick.
+const TRICK_G = 1.6;
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -36,6 +40,8 @@ const state = {
   signConfirmed: localStorage.getItem('pk-accel-sign') !== null,
   signVotes: 0,
   backwardsSince: 0,
+  lastTrick: 0,
+  wasConnected: false,
   closedOnPurpose: false,
   notice: null,
   retryDelay: 500,
@@ -54,8 +60,14 @@ const playerId = (() => {
 // ---------- Joining ----------
 
 $('#name').value = localStorage.getItem('pk-name') ?? '';
+$('#opt-sound').checked = getPrefs().sound;
+$('#opt-rumble').checked = getPrefs().rumble;
+$('#opt-sound').addEventListener('change', (e) => setPref('sound', e.target.checked));
+$('#opt-rumble').addEventListener('change', (e) => setPref('rumble', e.target.checked));
 
 $('#start').addEventListener('click', async () => {
+  // iOS only lets audio start from inside a tap, so do this before any await.
+  unlockAudio();
   const error = $('#join-error');
   error.hidden = true;
   localStorage.setItem('pk-name', $('#name').value.trim());
@@ -110,6 +122,8 @@ function connect() {
       state.slot = msg.slot;
       setPlayer(msg.slot, msg.name);
       banner(state.notice, 8000);
+      state.wasConnected = true;
+      fx.connected();
       sendInput();
     } else if (msg.t === 'full') {
       state.closedOnPurpose = true;
@@ -127,6 +141,8 @@ function connect() {
       return;
     }
     if (state.closedOnPurpose) return;
+    if (state.wasConnected) fx.disconnected();
+    state.wasConnected = false;
     banner('Reconnecting…');
     setTimeout(connect, state.retryDelay);
     state.retryDelay = Math.min(state.retryDelay * 2, 5000);
@@ -223,6 +239,7 @@ function onMotion(e) {
     calibrateSign(raw);
     state.accel = toWiimote(raw.map((v) => v * state.accelSign));
     checkGrip();
+    detectTrick(raw);
   }
   const r = e.rotationRate;
   if (r && r.alpha !== null) {
@@ -278,6 +295,16 @@ function checkGrip() {
   else if (now - state.backwardsSince > 1200 && $('#banner').hidden) banner('Turn your phone around: D-pad on the left', 0, 'grip');
 }
 
+/** A sharp flick (trick / wheelie in Mario Kart) gets a whoosh and a bump. */
+function detectTrick([x, y, z]) {
+  const now = performance.now();
+  if (now - state.lastTrick < 700) return;
+  if (Math.abs(Math.hypot(x, y, z) - 1) > TRICK_G) {
+    state.lastTrick = now;
+    fx.trick();
+  }
+}
+
 let wheelFrame = 0;
 function drawWheel() {
   if (wheelFrame) return;
@@ -302,12 +329,6 @@ async function keepAwake() {
 
 // ---------- Buttons ----------
 
-const haptic = $('#haptic');
-function tap() {
-  if (navigator.vibrate) navigator.vibrate(8);
-  else haptic.click();
-}
-
 /** Keep receiving a touch's events even if the thumb slides off the button. */
 function capture(el, pointerId) {
   try {
@@ -320,7 +341,7 @@ function capture(el, pointerId) {
 function setButton(bit, down) {
   const next = down ? state.buttons | bit : state.buttons & ~bit;
   if (next === state.buttons) return;
-  if (down) tap();
+  if (down) (bit === BUTTON.HOME ? fx.home : fx.press)();
   state.buttons = next;
   sendInput();
 }
@@ -366,7 +387,7 @@ function updateDpad() {
   const mask = BUTTON.UP | BUTTON.DOWN | BUTTON.LEFT | BUTTON.RIGHT;
   const next = (state.buttons & ~mask) | bits;
   if (next !== state.buttons) {
-    if ((bits & ~state.buttons) !== 0) tap();
+    if ((bits & ~state.buttons) !== 0) fx.item();
     state.buttons = next;
     sendInput();
   }
@@ -388,6 +409,17 @@ for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
     updateDpad();
   });
 }
+
+// Tap the speaker grille to mute / unmute, like turning down the remote speaker.
+$('#speaker').addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  unlockAudio();
+  const on = !getPrefs().sound;
+  setPref('sound', on);
+  $('#opt-sound').checked = on;
+  if (on) fx.soundOn();
+  banner(on ? 'Sound on' : 'Sound off (tap the speaker to turn it back on)', 1800);
+});
 
 // No scrolling, zooming or text selection while playing.
 for (const type of ['touchstart', 'touchmove']) {
