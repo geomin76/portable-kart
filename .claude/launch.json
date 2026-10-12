@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "portable-kart",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["src/main.js", "--no-open"],
+      "port": 7480,
+      "autoPort": false
+    }
+  ]
+}

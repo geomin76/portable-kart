@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#111318">
+  <title>Portable Kart</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="controller.css">
+</head>
+<body>
+  <!-- Join screen -->
+  <section id="join" class="screen">
+    <div class="join-card">
+      <img src="icon.svg" alt="" class="logo">
+      <h1>Portable Kart</h1>
+      <p class="sub">Your phone is the Wii Wheel.</p>
+      <label class="field">
+        <span>Your name</span>
+        <input id="name" maxlength="20" autocomplete="nickname" placeholder="Player">
+      </label>
+      <button id="start" class="primary">Join game</button>
+      <p id="join-error" class="error" hidden></p>
+    </div>
+  </section>
+
+  <!-- Controller -->
+  <section id="pad" class="screen" hidden>
+    <div class="side left">
+      <div id="dpad" class="dpad" data-label="Item">
+        <span class="arrow up"></span><span class="arrow right"></span>
+        <span class="arrow down"></span><span class="arrow left"></span>
+        <span class="dpad-label">ITEM</span>
+      </div>
+      <button class="btn big b" data-btn="B"><b>B</b><small>DRIFT</small></button>
+    </div>
+
+    <div class="middle">
+      <div class="status">
+        <div id="leds" class="leds"><i></i><i></i><i></i><i></i></div>
+        <div id="player-name" class="player-name">Connecting…</div>
+      </div>
+      <div class="wheel-wrap">
+        <svg id="wheel" class="wheel" viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="42" fill="none" stroke="currentColor" stroke-width="9"/>
+          <path d="M8 50h84M50 50v42" stroke="currentColor" stroke-width="9" fill="none"/>
+          <circle cx="50" cy="50" r="11" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="system">
+        <button class="btn small" data-btn="MINUS">−</button>
+        <button class="btn small home" data-btn="HOME">⌂</button>
+        <button class="btn small" data-btn="PLUS">+</button>
+      </div>
+      <button class="btn a" data-btn="A">A</button>
+    </div>
+
+    <div class="side right">
+      <button class="btn one" data-btn="ONE"><b>1</b><small>BRAKE</small></button>
+      <button class="btn big two" data-btn="TWO"><b>2</b><small>GAS</small></button>
+    </div>
+  </section>
+
+  <!-- Overlays -->
+  <div id="rotate" class="overlay" hidden>
+    <div class="rotate-phone"></div>
+    <p>Turn your phone sideways and hold it like a steering wheel.</p>
+    <p class="hint">If it won't rotate, turn off Rotation Lock in Control Center.</p>
+  </div>
+  <div id="banner" class="banner" hidden></div>
+
+  <!-- iOS 18+ plays a haptic tap when a switch is toggled via its label. -->
+  <label id="haptic" class="haptic" aria-hidden="true"><input type="checkbox" switch tabindex="-1"></label>
+
+  <script src="controller.js" type="module"></script>
+</body>
+</html>

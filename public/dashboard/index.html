@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portable Kart</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <header>
+    <img src="icon.svg" alt="" width="36" height="36">
+    <h1>Portable Kart</h1>
+  </header>
+
+  <main>
+    <section class="card join">
+      <div class="qr-wrap">
+        <img id="qr" alt="QR code to join from a phone" width="220" height="220">
+      </div>
+      <div class="join-text">
+        <h2>Grab a phone</h2>
+        <ol>
+          <li>Connect the phone to the <strong>same Wi-Fi</strong> as this computer.</li>
+          <li>Open the Camera and point it at the code.</li>
+          <li>Safari will say the connection isn't private. That's expected: tap <strong>Show Details</strong>, then <strong>visit this website</strong>.</li>
+          <li>Tap <strong>Join game</strong>, then <strong>Allow</strong> motion access.</li>
+        </ol>
+        <p class="url">Or type: <code id="phone-url">…</code></p>
+      </div>
+    </section>
+
+    <section class="players" id="players" aria-label="Players"></section>
+
+    <section class="card setup">
+      <div class="step" id="step-game">
+        <div class="step-head">
+          <span class="check" aria-hidden="true"></span>
+          <h2>Your Mario Kart Wii game</h2>
+        </div>
+        <p class="detail" id="game-detail">No game chosen yet.</p>
+        <div class="row">
+          <button id="find-games" class="secondary">Find it for me</button>
+        </div>
+        <ul id="game-list" class="choices" hidden></ul>
+        <details>
+          <summary>Enter the file location yourself</summary>
+          <div class="row">
+            <input id="game-path" placeholder="/path/to/Mario Kart Wii.rvz">
+            <button id="save-game" class="secondary">Use this file</button>
+          </div>
+        </details>
+        <p class="note">Use a copy of a disc you own. Portable Kart doesn't include or download games.</p>
+      </div>
+
+      <div class="step" id="step-dolphin">
+        <div class="step-head">
+          <span class="check" aria-hidden="true"></span>
+          <h2>Dolphin emulator</h2>
+        </div>
+        <p class="detail" id="dolphin-detail">Looking for Dolphin…</p>
+        <div class="row" id="dolphin-missing" hidden>
+          <a class="secondary button" href="https://dolphin-emu.org/download/" target="_blank" rel="noopener">Download Dolphin</a>
+          <button id="recheck" class="secondary">I installed it</button>
+        </div>
+        <details>
+          <summary>Dolphin is somewhere else</summary>
+          <div class="row">
+            <input id="dolphin-path" placeholder="/Applications/Dolphin.app">
+            <button id="save-dolphin" class="secondary">Use this</button>
+          </div>
+        </details>
+      </div>
+
+      <div class="launch">
+        <label class="toggle">
+          <input type="checkbox" id="fullscreen">
+          <span>Full screen</span>
+        </label>
+        <button id="play" class="primary">Play</button>
+        <button id="stop" class="secondary" hidden>Quit game</button>
+      </div>
+      <p id="error" class="error" role="alert" hidden></p>
+    </section>
+  </main>
+
+  <script src="dashboard.js" type="module"></script>
+</body>
+</html>

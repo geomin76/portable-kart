@@ -1,0 +1,24 @@
+{
+  "name": "portable-kart",
+  "version": "0.1.0",
+  "description": "Play Mario Kart Wii on a laptop with phones as Wii Remotes.",
+  "type": "module",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "test": "node --test test/"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/geomin76/portable-kart.git"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "selfsigned": "^5.5.0",
+    "ws": "^8.22.0"
+  }
+}
