@@ -421,6 +421,11 @@ $('#speaker').addEventListener('pointerdown', (e) => {
   banner(on ? 'Sound on' : 'Sound off (tap the speaker to turn it back on)', 1800);
 });
 
+// Resume audio whenever a finger lifts: touchend is a gesture iOS accepts
+// for starting audio, and audio may have been paused by the motion prompt.
+document.addEventListener('touchend', unlockAudio, { passive: true });
+document.addEventListener('pointerup', unlockAudio);
+
 // No scrolling, zooming or text selection while playing.
 for (const type of ['touchstart', 'touchmove']) {
   document.addEventListener(type, (e) => {

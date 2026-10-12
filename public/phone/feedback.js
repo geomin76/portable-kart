@@ -65,8 +65,14 @@ export function rumble(pattern) {
 let ctx = null;
 let out = null;
 
-/** Must be called from a tap (iOS only allows audio to start from a user gesture). */
+/**
+ * Must be called from a tap (iOS only allows audio to start from a user
+ * gesture). On iPhone that means a `click` or `touchend`; touch-down events
+ * don't count. iOS also pauses audio when a system prompt (like the motion
+ * permission dialog) appears, so this is safe to call on every tap.
+ */
 export function unlockAudio() {
+  if (ctx && ctx.state === 'running') return;
   if (!ctx) {
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
