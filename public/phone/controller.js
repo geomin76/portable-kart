@@ -14,10 +14,6 @@ const BUTTON = {
   RIGHT: 1 << 10,
 };
 
-// Held like the Wii Wheel, the remote's D-pad is rotated a quarter turn:
-// pushing toward the sky presses the remote's RIGHT, and so on.
-const SIDEWAYS_DPAD = { up: BUTTON.RIGHT, right: BUTTON.DOWN, down: BUTTON.LEFT, left: BUTTON.UP };
-
 const PLAYER_COLORS = ['#e5322d', '#3b82f6', '#2fb86a', '#f5c518'];
 const G = 9.80665;
 const DEG = Math.PI / 180;
@@ -33,9 +29,13 @@ const state = {
   // Default = held upright like a wheel with no motion data yet.
   accel: [-1, 0, 0],
   gyro: [0, 0, 0],
-  // iOS reports gravity with the opposite sign to the spec; confirmed at runtime.
-  accelSign: /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) ? -1 : 1,
+  // Some browsers (historically iOS Safari) report gravity with the opposite
+  // sign to the spec. Guessed from the browser, then confirmed at runtime
+  // and remembered for this phone.
+  accelSign: Number(localStorage.getItem('pk-accel-sign')) || (/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) ? -1 : 1),
+  signConfirmed: localStorage.getItem('pk-accel-sign') !== null,
   signVotes: 0,
+  backwardsSince: 0,
   closedOnPurpose: false,
   notice: null,
   retryDelay: 500,
@@ -79,7 +79,7 @@ $('#start').addEventListener('click', async () => {
   $('#join').hidden = true;
   $('#pad').hidden = false;
   if (!motionOk) state.notice = 'Steering is off: motion access was denied. Close this tab and reopen the link to allow it.';
-  updateOrientationOverlay();
+  layoutRemote();
   keepAwake();
   connect();
 });
@@ -148,9 +148,10 @@ function setPlayer(slot, name) {
 
 let bannerTimer = 0;
 /** Shows a message at the top; `fadeMs` hides it again (for one-off notices). */
-function banner(text, fadeMs = 0) {
+function banner(text, fadeMs = 0, kind = '') {
   const el = $('#banner');
   clearTimeout(bannerTimer);
+  el.dataset.kind = kind;
   el.textContent = text ?? '';
   el.hidden = !text;
   if (text && fadeMs) bannerTimer = setTimeout(() => (el.hidden = true), fadeMs);
@@ -176,58 +177,105 @@ function sendInput() {
 // Keep Dolphin fed even if motion events pause (e.g. phone lying still on some devices).
 setInterval(sendInput, 100);
 
-// ---------- Motion ----------
+// ---------- Layout ----------
+
+const remote = $('#remote');
 
 function screenAngle() {
   if (typeof window.orientation === 'number') return window.orientation;
   return screen.orientation?.angle ?? 0;
 }
 
-/** Device-frame vector -> frame aligned with what the user sees (x right, y up, z toward user). */
-function toScreen([x, y, z], angle) {
-  const t = angle * DEG;
-  const c = Math.cos(t);
-  const s = Math.sin(t);
-  return [x * c - y * s, x * s + y * c, z];
+/**
+ * Keep the remote glued to the phone's hardware. When the browser rotates
+ * the page (e.g. mid-turn while racing), rotate the remote back the other
+ * way so nothing moves under your thumbs.
+ */
+function layoutRemote() {
+  const angle = screenAngle();
+  const sideways = angle % 180 !== 0;
+  const w = sideways ? innerHeight : innerWidth;
+  const h = sideways ? innerWidth : innerHeight;
+  remote.style.width = `${w}px`;
+  remote.style.height = `${h}px`;
+  remote.style.rotate = `${-angle}deg`;
+  remote.dataset.angle = String(angle);
 }
+window.addEventListener('resize', layoutRemote);
+window.addEventListener('orientationchange', layoutRemote);
+screen.orientation?.addEventListener?.('change', layoutRemote);
+
+// ---------- Motion ----------
 
 /**
- * Screen frame -> Wii Remote frame, for a remote held like the Wii Wheel
- * (pointer end to the left, buttons facing you): the remote's +X points
- * down the screen, +Y to the right, +Z toward you.
+ * Phone frame -> Wii Remote frame. The phone is the remote: its top edge is
+ * the remote's pointer end, the screen is the button face. Phone axes are
+ * +x right, +y toward the top, +z out of the screen; Dolphin's remote axes
+ * are +X left, +Y toward the 1/2 end, +Z out of the face.
+ * No dependence on screen rotation, so steering can't jump when iOS rotates.
  */
-const toWiimote = ([sx, sy, sz]) => [-sy, sx, sz];
+const toWiimote = ([x, y, z]) => [-x, -y, z];
 
 function onMotion(e) {
   const a = e.accelerationIncludingGravity;
   if (a && a.x !== null) {
-    const angle = screenAngle();
-    const screenG = toScreen([a.x / G, a.y / G, a.z / G], angle).map((v) => v * state.accelSign);
-    calibrateSign(screenG, angle);
-    state.accel = toWiimote(screenG);
+    const raw = [a.x / G, a.y / G, a.z / G];
+    calibrateSign(raw);
+    state.accel = toWiimote(raw.map((v) => v * state.accelSign));
+    checkGrip();
   }
   const r = e.rotationRate;
   if (r && r.alpha !== null) {
-    // rotationRate: alpha about Z, beta about X, gamma about Y (deg/s).
-    state.gyro = toWiimote(toScreen([r.beta, r.gamma, r.alpha], screenAngle()));
+    // rotationRate: alpha about z, beta about x, gamma about y (deg/s).
+    state.gyro = toWiimote([r.beta, r.gamma, r.alpha]);
   }
   sendInput();
   drawWheel();
 }
 
 /**
- * The screen auto-rotates to keep "up" up, so while the phone is held like a
- * wheel, gravity's reaction should point up the screen. If it consistently
- * points down instead, this browser uses the opposite sign convention.
+ * Works out the browser's gravity sign convention. Whenever the page is
+ * upright on screen (auto-rotated, or portrait while held upright), "up" on
+ * screen is physically up, and per the spec gravity's reaction points that
+ * way. Readings that consistently point the other way mean an inverted
+ * convention. Held sideways with Rotation Lock on, "up" on screen is
+ * horizontal, so those readings are ignored.
  */
-function calibrateSign([sx, sy], angle) {
-  if (Math.abs(state.signVotes) >= 30 || angle % 180 === 0) return;
-  if (Math.abs(sy) < 0.6 || Math.abs(sx) > 0.5) return;
-  state.signVotes += sy > 0 ? 1 : -1;
-  if (state.signVotes <= -30) {
-    state.accelSign *= -1;
-    state.signVotes = 30;
+function calibrateSign([x, y]) {
+  if (state.signConfirmed) return;
+  const t = screenAngle() * DEG;
+  // Screen-up expressed in phone coordinates.
+  const ux = Math.sin(t);
+  const uy = Math.cos(t);
+  const along = x * ux + y * uy;
+  const across = x * uy - y * ux;
+  if (Math.abs(along) < 0.6 || Math.abs(across) > 0.5) return;
+  const vote = Math.sign(along) * state.accelSign;
+  state.signVotes += vote;
+  if (state.signVotes <= -30 || state.signVotes >= 30) {
+    if (state.signVotes < 0) state.accelSign *= -1;
+    state.signConfirmed = true;
+    try {
+      localStorage.setItem('pk-accel-sign', String(state.accelSign));
+    } catch {
+      // Private mode; we'll just recalibrate next time.
+    }
   }
+}
+
+/** Nudge players holding the phone the wrong way round (D-pad on the right). */
+function checkGrip() {
+  // Correct grip: the remote's +X (left side) points at the floor, so X ≈ -1g.
+  // Only trust this once we know the browser's sign convention.
+  const backwards = state.signConfirmed && state.accel[0] > 0.75;
+  const now = performance.now();
+  if (!backwards) {
+    if (state.backwardsSince && $('#banner').dataset.kind === 'grip') banner(null);
+    state.backwardsSince = 0;
+    return;
+  }
+  if (!state.backwardsSince) state.backwardsSince = now;
+  else if (now - state.backwardsSince > 1200 && $('#banner').hidden) banner('Turn your phone around: D-pad on the left', 0, 'grip');
 }
 
 let wheelFrame = 0;
@@ -240,15 +288,6 @@ function drawWheel() {
     $('#wheel').style.transform = `rotate(${tilt.toFixed(1)}deg)`;
   });
 }
-
-// ---------- Orientation ----------
-
-function updateOrientationOverlay() {
-  const portrait = window.matchMedia('(orientation: portrait)').matches;
-  $('#rotate').hidden = $('#pad').hidden || !portrait;
-}
-window.addEventListener('resize', updateOrientationOverlay);
-window.addEventListener('orientationchange', updateOrientationOverlay);
 
 async function keepAwake() {
   try {
@@ -308,26 +347,22 @@ for (const el of document.querySelectorAll('[data-btn]')) {
   el.addEventListener('lostpointercapture', release);
 }
 
-// D-pad: direction follows the thumb so you can roll between arrows.
+// D-pad: whichever arm is under the thumb, so you can roll between arrows.
+// Hit-testing by element works through the remote's rotation.
 const dpad = $('#dpad');
 const dpadPointers = new Map();
 function dpadDirection(e) {
-  const rect = dpad.getBoundingClientRect();
-  const dx = e.clientX - (rect.left + rect.width / 2);
-  const dy = e.clientY - (rect.top + rect.height / 2);
-  if (Math.hypot(dx, dy) < Math.min(rect.width, rect.height) * 0.12) return null;
-  if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? 'right' : 'left';
-  return dy > 0 ? 'down' : 'up';
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  return el?.closest?.('#dpad .arm')?.dataset.dir ?? null;
 }
 function updateDpad() {
   const dirs = new Set(dpadPointers.values());
   let bits = 0;
-  for (const dir of ['up', 'right', 'down', 'left']) {
-    const on = dirs.has(dir);
-    dpad.querySelector(`.${dir}`).classList.toggle('on', on);
-    if (on) bits |= SIDEWAYS_DPAD[dir];
+  for (const arm of dpad.querySelectorAll('.arm')) {
+    const on = dirs.has(arm.dataset.dir);
+    arm.classList.toggle('on', on);
+    if (on) bits |= BUTTON[arm.dataset.dir];
   }
-  dpad.classList.toggle('pressed', bits !== 0);
   const mask = BUTTON.UP | BUTTON.DOWN | BUTTON.LEFT | BUTTON.RIGHT;
   const next = (state.buttons & ~mask) | bits;
   if (next !== state.buttons) {

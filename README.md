@@ -59,24 +59,25 @@ The first time it runs, your computer may ask whether to allow incoming network 
 
 ## Controls
 
-Hold the phone sideways like the Wii Wheel, screen facing you.
+The phone screen looks like a Wii Remote. Hold it sideways with the **D-pad on the left**, screen facing you, the way you'd hold a Wii Remote in the Wii Wheel. The layout is pinned to the phone itself, so it never moves when iOS rotates the page. Rotation Lock can stay on.
 
 | Phone | Wii Remote | In Mario Kart Wii |
 |---|---|---|
 | Tilt left / right | Accelerometer | Steer |
 | Flick up | Accelerometer | Trick / wheelie |
-| **2 · GAS** (right thumb) | 2 | Accelerate / confirm |
-| **1 · BRAKE** (right thumb) | 1 | Brake, reverse / back |
-| **B · DRIFT** (left thumb) | B | Drift / hop |
-| **ITEM** pad (left thumb) | D-pad | Use item / move in menus |
+| **2** (right thumb) | 2 | Accelerate / confirm |
+| **1** (right thumb) | 1 | Brake, reverse / back |
+| **B** pill below the D-pad (left thumb) | B (the trigger on the back) | Drift / hop |
+| **D-pad** (left thumb) | D-pad | Use item / move in menus |
 | A, −, ⌂, + | A, −, Home, + | Menus, pause |
 
-B sits under your left thumb and 2 under your right, so you can drift and accelerate at the same time (a real Wii Wheel uses your index finger for B).
+A real remote has B on the back under your index finger. Phones have no back buttons, so B sits next to the D-pad, where your left thumb can drift while your right thumb holds 2.
 
 ## Troubleshooting
 
 - **Phone can't load the page.** Make sure it's on the same Wi-Fi as the laptop, not cellular. Guest and hotel networks often block devices from talking to each other, so use a phone hotspot or home network. Check that your firewall allowed the connection.
-- **Steering doesn't work.** Motion access was denied. Close the Safari tab, scan the code again, and tap **Allow**. Also turn off Rotation Lock so the controller can go sideways.
+- **Steering doesn't work.** Motion access was denied. Close the Safari tab, scan the code again, and tap **Allow**.
+- **"Turn your phone around".** You're holding it with the D-pad on the right. Flip it so the D-pad is on the left.
 - **"Game is full".** Four players are already connected.
 - **Port already in use.** Portable Kart is probably already running in another window.
 
@@ -98,7 +99,7 @@ npm test
 | `public/phone/` | The controller web page |
 | `public/dashboard/` | The laptop dashboard |
 
-**Motion frames.** The phone converts its motion data into Dolphin's Wii Remote frame (+X left, +Y toward the 1/2 end, +Z out of the button face) before sending it. For a remote held like a wheel, that means +X points down the screen, +Y right and +Z toward the player. The Dolphin profile then binds DSU accel `(x, y, z)` to Wii Remote `(x, z, y)`, and gyro `(pitch, yaw, roll)` to `(x, z, y)`.
+**Motion frames.** The phone *is* the remote: its top edge is the pointer end and its screen is the button face. Motion is converted straight from the phone's axes into Dolphin's Wii Remote frame (+X left, +Y toward the 1/2 end, +Z out of the button face), so it never depends on how the browser has rotated the page. The browser's gravity sign convention (iOS Safari has historically inverted it) is detected from moments when the page is upright, then remembered. The Dolphin profile then binds DSU accel `(x, y, z)` to Wii Remote `(x, z, y)`, and gyro `(pitch, yaw, roll)` to `(x, z, y)`.
 
 ## Roadmap
 
